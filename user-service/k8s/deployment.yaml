@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service-service
+  template:
+    metadata:
+      labels:
+        app: user-service-service
+    spec:
+      containers:
+      - name: user-service-service
+        image: <IMAGE>
+        ports:
+        - containerPort: 3000
