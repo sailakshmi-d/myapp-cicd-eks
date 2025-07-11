@@ -10,7 +10,9 @@ phases:
   install:
     commands:
       - echo Installing kubectl...
-      - curl -LO https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
+      - KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
+      - echo "Downloading kubectl version: $KUBECTL_VERSION"
+      - curl -LO https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl
       - chmod +x kubectl && mv kubectl /usr/local/bin/
 
   pre_build:
@@ -36,5 +38,3 @@ phases:
 
 artifacts:
   files: []
-
-
