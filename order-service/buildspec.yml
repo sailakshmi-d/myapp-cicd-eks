@@ -1,21 +1,41 @@
 version: 0.2
+
 env:
   variables:
-    EKS_CLUSTER: "your-eks-cluster-name"
+    EKS_CLUSTER: "eks-cluster-2"
+    AWS_REGION: "us-east-1"
+    ECR_REPO: "185187793433.dkr.ecr.us-east-1.amazonaws.com/order-service"
+
 phases:
+  install:
+    runtime-versions:
+      docker: 20
+    commands:
+      - echo Installing kubectl...
+      - curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl && mv kubectl /usr/local/bin/
+
   pre_build:
     commands:
-      - echo Logging into ECR...
-      - $(aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO)
+      - echo Logging into Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
   build:
     commands:
+      - echo Building the Docker image...
       - docker build -t $ECR_REPO:$IMAGE_TAG .
+      - echo Pushing the image to ECR...
       - docker push $ECR_REPO:$IMAGE_TAG
+
   post_build:
     commands:
+      - echo Updating kubeconfig for EKS cluster...
       - aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
+      - echo Deploying to EKS...
       - sed -i "s|<IMAGE>|$ECR_REPO:$IMAGE_TAG|g" k8s/deployment.yaml
       - kubectl apply -f k8s/
+
 artifacts:
   files: []
+
